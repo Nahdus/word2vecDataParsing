@@ -1,0 +1,28 @@
+word2vec
+-unable to run on windows requires make which is available in unix
+-installed make binaries still unable to install word2vec got syntax errors within the library
+
+
+Creating our own word to vector 
+-two model architecture are available
+    -continuous bag of words(COBW)
+        -its faster
+        -he model predicts the current word from a window of surrounding context words. 
+        - The order of context words does not influence prediction (bag-of-words assumption).
+    -skip gram
+        -it is better with rare(infrequent words)
+        -weighs nearby context words more heavily than more distant context words.
+        -http://mccormickml.com/2016/04/19/word2vec-tutorial-the-skip-gram-model/
+parameters
+-training algorithms
+    -hierarchical softmax
+    -negative sampling
+    -Both
+    -As training epochs increase, hierarchical softmax stops being useful.
+
+Training models using tensor flow
+In TensorFlow.js there are two ways to train a machine learning model:
+
+    1.using the Layers API with LayersModel.fit() or LayersModel.fitDataset().
+    2.using the Core API with Optimizer.minimize().
+    https://www.tensorflow.org/js/guide/train_models

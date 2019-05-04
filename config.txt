@@ -1,0 +1,3 @@
+install python2.7
+npm config set python python2.7
+npm install -g node-gyp
