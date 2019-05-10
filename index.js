@@ -24,18 +24,27 @@ const sentenceSplitter = paragraph => {
  * returns the frequency of words with word as the key and fequency as value
  */
 
-const tokenFrequency = tokens =>
-  [...new Set(tokens)].reduce((obj, tok) => {
-    const frequency = tokens.reduce((n, val) => {
-      return n + (val === tok);
-    }, 0);
+const tokenFrequency = tokens =>{
+
+  const setTokens=[...new Set(tokens)]
+  return setTokens.reduce((obj, tok) => {
+    const frequency   = tokens.reduce((count, word) =>word.toLowerCase()===tok.toLowerCase()?count+1:count, 0);
+    
     const containsDigit = /\d+/;
     if (!containsDigit.test(tok)) {
       obj[tok.toLocaleLowerCase()] = frequency;
     }
     return obj;
   }, new Object());
+}
 
+
+
+  /**
+   * 
+   * @param {sting[]} wordlist 
+   * does one hot encoding of the words
+   */
 const vectorise = wordlist => {
   const vectorDict = new Object();
   wordlist.forEach((word, index) => {
@@ -136,24 +145,25 @@ const splitSDwise = (listy, mean, SD) => {
   return { SDbatch: SDbatchList, limitArray: limitArray };
 };
 
+
+
+
+
+
+
 /**
  *
  * @param {string} word target word
- * @param {string[]} sentence list of sentences
+ * @param {string[]} windowSentence list of sentences
  * if word is present in the sentence function will return the neighbours
  */
-const window = (word, sentence) => {
-  let wordsInSentences = sentence.split(" ");
-  const constainsSymbols = /([a-z]|[A-Z])+\w[\.|?|!]/;
-
+const neighbourFinder = (word, windowSentence) => {
+  const tokenizer = new natural.WordTokenizer();
+  let wordsInSentences=tokenizer.tokenize(windowSentence)
+  
+ 
   wordsInSentences = wordsInSentences.map(eachWord =>
-    constainsSymbols.test(eachWord)
-      ? (() => {
-          const leters = eachWord.split("");
-          leters.pop();
-          return leters.join("");
-        })()
-      : eachWord
+    eachWord.toLowerCase()
   );
   const index = wordsInSentences.indexOf(word);
   return index !== -1
@@ -164,9 +174,98 @@ const window = (word, sentence) => {
     : false;
 };
 
-console.log(window("abc", "abc. is a good boy"));
-console.log(window("xyz", "abc is a good boy"));
-console.log(sentenceSplitter("what the hell? is wrong with you?"))
+
+
+const loadJsonFromFile=(fileName)=>{
+  let rawdata = fs.readFileSync(fileName);  
+  return JSON.parse(rawdata); 
+}
+
+
+
+
+const filterOutWordsBelow=(wordFrequencyJosn,frequencyTreshold)=>{
+  let wordkeys=Object.keys(wordFrequencyJosn)
+  const filteredWords={}
+  wordkeys.forEach((key)=>{
+    if(wordFrequencyJosn[key]>=frequencyTreshold){
+      filteredWords[key]=wordFrequencyJosn[key]
+    }
+  })
+  return filteredWords
+}
+
+
+const filterOutWordsAbove=(wordFrequencyJosn,frequencyTreshold)=>{
+  let wordkeys=Object.keys(wordFrequencyJosn)
+  const filteredWords={}
+  wordkeys.forEach((key)=>{
+    if(wordFrequencyJosn[key]<=frequencyTreshold){
+      filteredWords[key]=wordFrequencyJosn[key]
+    }
+  })
+  return filteredWords
+}
+/*
+promiseread("./corpous/corpous.txt", "utf8").then(
+  data=>{
+    const tokenizer = new natural.WordTokenizer();
+    //const words=tokenizer.tokenize(data)
+    const wordFrequency=tokenFrequency(tokenizer.tokenize(data))
+   
+    const treshold=20
+    
+    
+    const FilteredwordFrequency = filterOutWordsAbove(wordFrequency,treshold)
+    
+    const words = Object.keys(FilteredwordFrequency)
+    
+    const sentences =sentenceSplitter(data)
+    const coOccuranceFreq={}
+    
+    const highFrequencyWords=Object.keys(filterOutWordsBelow(FilteredwordFrequency,treshold))
+    //console.log(highFrequencyWords)
+    
+    words.forEach((word)=>{
+      sentences.forEach(sentence=>{
+        const neighbours=neighbourFinder(word,sentence)
+        if (neighbours){
+          const filteredNeighbours=neighbours.filter((eachNeighbour)=>highFrequencyWords.indexOf(eachNeighbour)==-1)
+          if(coOccuranceFreq[word]===undefined){
+            coOccuranceFreq[word]=filteredNeighbours
+          }else{
+            //console.log("concatinating")
+            coOccuranceFreq[word]=coOccuranceFreq[word].concat(filteredNeighbours)
+          }
+          
+        }
+        
+      })
+     })
+     writeJsonToFile("jsonfile.json",coOccuranceFreq)
+     
+  }
+)
+*/
+
+// promiseread("./corpous/corpous.txt", "utf8").then((data)=>{
+//   const tokenizer = new natural.WordTokenizer()
+//   const FilteredwordFrequency = tokenFrequency(tokenizer.tokenize(data))
+//   console.log(FilteredwordFrequency["is"],FilteredwordFrequency["to"])
+//   const highFrequencyWords=Object.keys(filterOutWordsBelow(FilteredwordFrequency,50))
+  
+//   console.log(highFrequencyWords)x
+//   console.log(["it","is","a","way","to","use","Cancer"].filter((eachNeighbour)=>
+//   highFrequencyWords.indexOf(eachNeighbour)==-1))
+// })
+
+
+
+
+
+
+
+
 
 
 
@@ -195,26 +294,27 @@ console.log(sentenceSplitter("what the hell? is wrong with you?"))
 // promiseread("./corpous/corpous.txt", "utf8")
 //   .then(data => {
 //     const tokenizer = new natural.WordTokenizer();
-//     const wordFrequency = tokenFrequency(tokenizer.tokenize(data));
-//     const sortedWordFrequency = sortAscending(Object.values(wordFrequency));
-//     const top2perc = Math.round(sortedWordFrequency.length * 0.02);
+//     const FilteredwordFrequency = tokenFrequency(tokenizer.tokenize(data));
+//     const sortedFilteredwordFrequency = sortAscending(Object.values(FilteredwordFrequency));
+//     const top2perc = Math.round(sortedFilteredwordFrequency.length * 0.02);
 //     console.log("top 2 perc", top2perc);
-//     console.log(sortedWordFrequency.slice(-1)[0]);
-//     console.log(sortedWordFrequency.length);
-//     sortedWordFrequency.splice(-top2perc);
-//     const SD = standardeviation(sortedWordFrequency);
+//     console.log(sortedFilteredwordFrequency.slice(-1)[0]);
+//     console.log(sortedFilteredwordFrequency.length);
+//     sortedFilteredwordFrequency.splice(-top2perc);
+//     const SD = standardeviation(sortedFilteredwordFrequency);
 
-//     console.log(sortedWordFrequency.slice(-1)[0]);
-//     console.log(sortedWordFrequency.length);
-//     const mean = average(sortedWordFrequency);
-//     console.log("upper Limit", sortedWordFrequency.slice(-1)[0]);
-//     console.log("lower Limit ", sortedWordFrequency[0]);
+//     console.log(sortedFilteredwordFrequency.slice(-1)[0]);
+//     console.log(sortedFilteredwordFrequency.length);
+//     const mean = average(sortedFilteredwordFrequency);
+//     console.log("upper Limit", sortedFilteredwordFrequency.slice(-1)[0]);
+//     console.log("lower Limit ", sortedFilteredwordFrequency[0]);
 //     console.log("SD", SD);
 //     console.log("mean", mean);
 //     console.log(Math.round(SD));
 //     console.log(Math.round(mean));
-//     const SDbatchList = splitSDwise(sortedWordFrequency, mean, SD);
+//     const SDbatchList = splitSDwise(sortedFilteredwordFrequency, mean, SD);
 //     const histo = SDbatchList.map(x => x.length);
 //     writeJsonToFile("x.txt", histo);
 //   })
-//   .catch(err => console.log(err));
+//   .catch(err => console.log(err))
+//
